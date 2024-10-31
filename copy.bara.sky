@@ -1,0 +1,400 @@
+# Copyright (C) 2024 The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+upstream_git_repo = 'https://gitlab.com/kernel-firmware/linux-firmware.git'
+
+# ##########################################################
+# Parsing of linux-firmware WHENCE file
+# ##########################################################
+
+section_divider = '--------------------------------------------------------------------------'
+
+# Handle paths that might be quoted or use backslashes to escape spaces.
+#
+# For some reason some of the paths listed in WHENCE seem to be quoted or
+# use '\ ' to escape spaces in the files, even though this doesn't seem like
+# it should be necessary. Handle it. This takes a path `p`. If it's surrounded
+# by quotes it just strips the quotes off. If it isn't quoted but we see
+# '\ ' we'll transform that to just simple spaces.
+def unquote_path(p):
+    if p.startswith('"') and p.endswith('"'):
+        p = p[1:-1]
+    else:
+        p = p.replace('\\ ', ' ')
+
+    return p
+
+# Parse WHENCE from the upstream repository and return dict w/ info about files.
+#
+# This will read the upstream whence and return a dictionary keyed by files
+# referenced in the upstream WHENCE (anything tagged 'File:', 'RawFile:', or
+# 'Link:'). Values in the dictionary will be another dict that looks like:
+#   {
+#      'driver':  Name of the driver line associated with this file,
+#      'kind':    The kind of file ('File', 'RawFile', or 'Link')
+#      'license': If this key is present it's the text of the license; if this
+#                 key is not present then the license is unknown.
+#      'link':    Only present for 'kind' == 'Link'. This is where the link
+#                 should point to.
+#   }
+def parse_whence(whence_text):
+    file_info_map = {}
+
+    driver = 'UNKNOWN'
+    unlicensed_files = []
+    license_text = None
+
+    for line in whence_text.splitlines() + [section_divider]:
+        # Take out trailing spaces / carriage returns
+        line = line.rstrip()
+
+        # Look for tags, which are lines that look like:
+        #   tag: other stuff
+        #
+        # Tags always need to start the line and can't have any spaces in
+        # them, which helps ID them as tags.
+        #
+        # Note that normally we require a space after the colon which keeps
+        # us from getting confused when we're parsing license text that
+        # has a URL. We special-case allow lines to end with a colon
+        # since some tags (like "License:") are sometimes multiline tags
+        # and the first line might just be blank.
+        if ': ' in line or line.endswith(':'):
+            tag, _, rest = line.partition(': ')
+            tag = tag.rstrip(':')
+            if ' ' in tag or '\t' in tag:
+                tag = None
+            else:
+                rest = rest.lstrip()
+        else:
+            tag = None
+
+        # Any new tag or a full separator ends a license.
+        if line == section_divider or (tag and license_text):
+            if license_text:
+                for f in unlicensed_files:
+                    # Clear out blank lines at the start and end
+                    for i, text in enumerate(license_text):
+                        if text:
+                            break
+                    for j, text in reversed(list(enumerate(license_text))):
+                        if text:
+                            break
+                    license_text = license_text[i:j+1]
+
+                    file_info_map[f]['license'] = '\n'.join(license_text)
+            unlicensed_files = []
+            license_text = None
+
+            if line == section_divider:
+                driver = 'UNKNOWN'
+
+        if tag == 'Driver':
+            driver = rest
+        elif tag in ['File', 'RawFile', 'Link']:
+            if tag == 'Link':
+                rest, _, link_dest = rest.partition(' -> ')
+                rest = rest.rstrip()
+                link_dest = unquote_path(link_dest.lstrip())
+
+            rest = unquote_path(rest)
+
+            file_info_map[rest] = { 'driver': driver, 'kind': tag }
+            if tag == 'Link':
+                file_info_map[rest]['link'] = link_dest
+
+            unlicensed_files.append(rest)
+        elif tag in ['License', 'Licence']:
+            license_text = [rest]
+        elif license_text:
+            license_text.append(line)
+
+    return file_info_map
+
+# Look at the license and see if it references other files.
+#
+# Many of the licenses in WHENCE refer to other files in the same directory.
+# This will detect those and return a list of indirectly referenced files.
+def find_indirect_files(license_text):
+    license_files = []
+
+    # Our regex match works better if there are no carriage returns, so
+    # split everything else and join with spaces. All we care about is
+    # detecting indirectly referenced files anyway.
+    license_text_oneline = ' '.join(license_text.splitlines())
+
+    # The only phrasing that appears present right now refer to one or two
+    # other files and looks like:
+    #   See <filename> for details
+    #   See <filename1> and <filename2> for details
+    #
+    # Detect those two. More can be added later.
+    pattern = re2.compile(r'.*[Ss]ee (.*) for details.*')
+    matcher = pattern.matcher(license_text_oneline)
+    if matcher.matches():
+        for i in range(matcher.group_count()):
+            license_files.extend(matcher.group(i + 1).split(' and '))
+
+    return license_files
+
+# ##########################################################
+# Templates for generated files
+# ##########################################################
+
+# NOTES:
+# - Right now license_type is always BY_EXCEPTION_ONLY. If this is
+#   ever not right we can always add a lookup table by license_kind.
+metadata_template = \
+'''name: "linux-firmware-{name}"
+description:
+    "Contains an import of upstream linux-firmware for {name}."
+
+third_party {{
+  homepage: "{upstream_git_repo}"
+  identifier {{
+    type: "Git"
+    value: "{upstream_git_repo}"
+    primary_source: true
+    version: "{version}"
+  }}
+  version: "{version}"
+  last_upgrade_date {{ year: {year} month: {month} day: {day} }}
+  license_type: BY_EXCEPTION_ONLY
+}}
+'''
+
+# Automatically create the METADATA file under the directory `name`.
+def create_metadata_file(ctx, name):
+    output = metadata_template.format(
+        name = name,
+        year = ctx.now_as_string('yyyy'),
+        month = ctx.now_as_string('M'),
+        day = ctx.now_as_string('d'),
+        version = ctx.fill_template('${GIT_SHA1}'),
+        upstream_git_repo = upstream_git_repo,
+    )
+
+    ctx.write_path(ctx.new_path(name + '/METADATA'), output)
+
+android_bp_template = \
+'''// Copyright (C) {year} The Android Open Source Project
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+// This file is autogenerated by copybara, please do not edit.
+
+license {{
+    name: "linux_firmware_{name}_license",
+    // Private visibility because nothing links against this. The kernel just
+    // asks for it to be loaded from disk by name.
+    visibility: ["//visibility:private"],
+    license_kinds: [{license_kinds}],
+    license_text: [{license_files}],
+}}
+
+prebuilt_firmware {{
+    name: "linux_firmware_{name}",
+    licenses: ["linux_firmware_{name}_license"],
+    srcs: [{fw_files}],
+    dsts: [{fw_files}],
+    vendor: true,
+}}
+'''
+
+# Format the an array of strings to go into Android.bp
+def format_android_bp_string_arr(a):
+    if len(a) == 1:
+        return '"%s"' % a[0]
+
+    indent_per = '    '
+    indent = indent_per * 2
+    return '\n' + indent + \
+           (',\n' + indent).join(['"%s"' % s for s in a]) + \
+           ',\n' + indent_per
+
+# Automatically create the Android.bp file under the directory `name`.
+def create_android_bp_file(ctx, name, license_kind, fw_files):
+    output = android_bp_template.format(
+        name = name,
+        license_kinds = format_android_bp_string_arr([license_kind]),
+        license_files = format_android_bp_string_arr(['LICENSE']),
+        fw_files = format_android_bp_string_arr(fw_files),
+        year = ctx.now_as_string('yyyy'),
+    )
+    ctx.write_path(ctx.new_path(name + '/Android.bp'), output)
+
+# Create the LICENSE file containing all relevant license text.
+def create_license_file(ctx, name, license_text, license_files, fw_files):
+    license_header_strs = []
+    license_header_strs.append("For the files:")
+    for f in fw_files:
+        license_header_strs.append("- %s" % f)
+    license_header_strs.append("\nThe license is as follows:\n")
+    license_header_strs.append(license_text)
+
+    # Even though the indrectly referenced files are copied to the directory
+    # too, policy says to copy them into the main LICENSE file for easy
+    # reference.
+    license_strs = ['\n'.join(license_header_strs)]
+    for f in license_files:
+        license_strs.append("The text of %s is:\n\n%s" %
+                            (f, ctx.read_path(ctx.new_path(name + '/' + f))))
+
+    ctx.write_path(ctx.new_path(name + '/LICENSE'),
+                   '\n\n---\n\n'.join(license_strs))
+
+commit_message_template = \
+'''IMPORT: {name}
+
+Import firmware "{name}" using copybara.
+
+Third-Party Import of: {upstream_git_repo}
+Request Document: go/android3p
+For CL Reviewers: go/android3p#reviewing-a-cl
+For Build Team: go/ab-third-party-imports
+Security Questionnaire: REPLACE WITH bug filed by go/android3p process
+Bug: REPLACE WITH motivation bug
+Bug: REPLACE WITH bug filed by go/android3p process
+Test: None
+'''
+
+# Automatically set the commit message.
+def set_commit_message(ctx, name):
+    output = commit_message_template.format(
+        name = name,
+        upstream_git_repo = upstream_git_repo,
+    )
+    ctx.set_message(output)
+
+# ##########################################################
+# Main transformation
+# ##########################################################
+
+def _firmware_import_transform(ctx):
+    name = ctx.params['name']
+    license_kind = ctx.params['license_kind']
+    expected_license_files = ctx.params['license_files']
+    fw_files = ctx.params['fw_files']
+
+    # We will read the WHENCE to validate that the license upstream lists for
+    # the fw_files matches the license we think we have.
+    whence_text = ctx.read_path(ctx.new_path('WHENCE'))
+    file_info_map = parse_whence(whence_text)
+
+    # To be a valid import then every fw_file we're importing must have the
+    # same license. Validate that.
+    license_text = file_info_map[fw_files[0]].get('license', '')
+    if not license_text:
+        ctx.console.error('Missing license for "%s"' % fw_files[0])
+
+    bad_licenses = [f for f in fw_files
+                    if file_info_map[f].get('license', '') != license_text]
+    if bad_licenses:
+        ctx.console.error(
+            ('All files in a module must have a matching license. ' +
+             'The license(s) for "%s" don\'t match the license for "%s".') %
+            (', '.join(bad_licenses), fw_files[0])
+        )
+
+    for f in expected_license_files:
+        ctx.run(core.move(f, name + '/' + f))
+
+    for f in fw_files:
+        if file_info_map[f]['kind'] == 'Link':
+            dirname = (name + '/' + f).rsplit('/', 1)[0]
+            ctx.create_symlink(ctx.new_path(name + '/' + f),
+                               ctx.new_path(dirname + '/' + file_info_map[f]['link']))
+        else:
+            ctx.run(core.move(f, name + '/' + f))
+
+    # Look for indirectly referenced license files since we'll need those too.
+    license_files = find_indirect_files(license_text)
+
+    # copybara required us to specify all the origin files. To make this work
+    # firmware_import_workflow() requires the callers to provide the list of
+    # indirectly referenced license files. Those should match what we detected.
+    if tuple(sorted(license_files)) != tuple(sorted(expected_license_files)):
+        ctx.console.error(
+            ('Upstream WHENCE specified that licenses were %r but we expected %r.') %
+            (license_files, expected_license_files)
+        )
+
+    create_license_file(ctx, name, license_text, license_files, fw_files)
+    create_metadata_file(ctx, name)
+    create_android_bp_file(ctx, name, license_kind, fw_files)
+    set_commit_message(ctx, name)
+
+    # We don't actually want 'WHENCE' in the destination but we need to read it
+    # so we need to list it in the input files. We can't core.remove() since
+    # that yells at us. Just replace it with some placeholder text.
+    ctx.write_path(ctx.new_path('WHENCE'),
+                   'Upstream WHENCE is parsed to confirm licenses; not copied here.\n')
+
+# Create a workflow for the given files.
+def firmware_import_workflow(name, license_kind, license_files, fw_files):
+    return core.workflow(
+        name = name,
+        authoring = authoring.overwrite('linux-firmware importer <noreply@google.com>'),
+
+        origin = git.origin(
+            url = upstream_git_repo,
+            ref = 'main',
+        ),
+
+        # The below is just a placeholder and will be overridden by command
+        # line arguments passed by `run_copybara.sh`. The script is used
+        # because our copybara flow is different than others. Our flow is:
+        # 1. Add the new firmware import to copy.bara.sky and create a
+        #    'ANDROID:' CL for this.
+        # 2. Run copybara locally which creates an 'IMPORT:' CL. Validate
+        #    that it looks OK.
+        # 3. Upload both CLs in a chain and get review.
+        destination = git.destination(
+            url = 'please-use-run_copybara.sh',
+            push = 'please-use-run_copybara.sh',
+        ),
+
+        origin_files = glob(
+            include = license_files + fw_files + ['WHENCE'],
+        ),
+        destination_files = glob(
+            include = [name + '/**'] + ['WHENCE'],
+        ),
+        mode = 'SQUASH',
+        transformations = [
+            core.dynamic_transform(
+                impl = _firmware_import_transform,
+                params = {
+                    'name': name,
+                    'license_kind': license_kind,
+                    'license_files': license_files,
+                    'fw_files': fw_files,
+                },
+            ),
+        ]
+    )
+
+# ##########################################################
+# Firmware that we manage, sorted alphabetically
+# ##########################################################
