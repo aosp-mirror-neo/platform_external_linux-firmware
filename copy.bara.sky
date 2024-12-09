@@ -398,33 +398,3 @@ def firmware_import_workflow(name, license_kind, license_files, fw_files):
 # ##########################################################
 # Firmware that we manage, sorted alphabetically
 # ##########################################################
-
-# Realtek r8152 (and related) USB Ethernet adapters
-firmware_import_workflow(
-    name = 'r8152',
-    license_kind = 'BSD-Binary-Only',
-    license_files = [
-        'LICENCE.rtlwifi_firmware.txt',
-    ],
-    fw_files = [
-        'rtl_nic/rtl8153a-2.fw',
-        'rtl_nic/rtl8153a-3.fw',
-        'rtl_nic/rtl8153a-4.fw',
-        'rtl_nic/rtl8153b-2.fw',
-        'rtl_nic/rtl8153c-1.fw',
-        'rtl_nic/rtl8156a-2.fw',
-        'rtl_nic/rtl8156b-2.fw',
-    ],
-)
-
-# Ralink RT2800 (and related) USB wireless MACs
-firmware_import_workflow(
-    name = 'rt2800usb',
-    license_kind = 'BSD-Binary-Only',
-    license_files = [
-        'LICENCE.ralink-firmware.txt',
-    ],
-    fw_files = [
-        'rt2870.bin',
-    ],
-)
