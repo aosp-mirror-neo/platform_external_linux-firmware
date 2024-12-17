@@ -422,6 +422,47 @@ def firmware_import_workflow(name, license_kind, license_files, fw_files, requir
 # Firmware that we manage, sorted alphabetically
 # ##########################################################
 
+# Intel AX201 Bluetooth chip
+firmware_import_workflow(
+    name = 'btusb-ibt_ax201',
+    license_kind = 'BSD-Binary-Only',
+    license_files = [
+        'LICENCE.ibt_firmware',
+    ],
+    fw_files = [
+        'intel/ibt-19-0-0.ddc',
+        'intel/ibt-19-0-0.sfi',
+        'intel/ibt-19-0-1.ddc',
+        'intel/ibt-19-0-1.sfi',
+        'intel/ibt-19-0-4.ddc',
+        'intel/ibt-19-0-4.sfi',
+        'intel/ibt-19-16-4.ddc',
+        'intel/ibt-19-16-4.sfi',
+        'intel/ibt-19-32-0.ddc',
+        'intel/ibt-19-32-0.sfi',
+        'intel/ibt-19-32-1.ddc',
+        'intel/ibt-19-32-1.sfi',
+        'intel/ibt-19-32-4.ddc',
+        'intel/ibt-19-32-4.sfi',
+        'intel/ibt-19-240-1.ddc',
+        'intel/ibt-19-240-1.sfi',
+        'intel/ibt-19-240-4.ddc',
+        'intel/ibt-19-240-4.sfi',
+    ],
+)
+
+# Intel AX201 Wireless MAC (API Revision 0x77)
+firmware_import_workflow(
+    name = 'iwlwifi-QuZ-a0-hr-b0-77',
+    license_kind = 'BSD-Binary-Only',
+    license_files = [
+        'LICENCE.iwlwifi_firmware',
+    ],
+    fw_files = [
+        'iwlwifi-QuZ-a0-hr-b0-77.ucode',
+    ],
+)
+
 # Realtek r8152 (and related) USB Ethernet adapters
 firmware_import_workflow(
     name = 'r8152',
