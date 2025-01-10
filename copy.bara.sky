@@ -267,15 +267,17 @@ def create_license_file(ctx, name, license_text, license_files, fw_files):
 commit_message_template = \
 '''IMPORT: {name}
 
-Import firmware "{name}" using copybara.
+Import linux-firmware "{name}" using copybara.
+
+NOTE: linux-firmware is not like most android3p reviews. See
+go/android-linux-firmware for some details.
 
 Third-Party Import of: {upstream_git_repo}
 Request Document: go/android3p
-For CL Reviewers: go/android3p#reviewing-a-cl
-For Build Team: go/ab-third-party-imports
-Security Questionnaire: REPLACE WITH bug filed by go/android3p process
-Bug: REPLACE WITH motivation bug
-Bug: REPLACE WITH bug filed by go/android3p process
+For CL Reviewers: go/android-linux-firmware:reviewers
+Security Questionnaire: b:{{REPLACE WITH bug filed by go/android3p process}}
+Bug: {{REPLACE WITH motivation bug without b: prefix}}
+Bug: {{REPLACE WITH bug filed by go/android3p process without b: prefix}}
 Test: None
 '''
 
