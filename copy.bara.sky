@@ -211,7 +211,7 @@ license {{
     visibility: ["//visibility:private"],
     license_kinds: [{license_kinds}],
     license_text: [{license_files}],
-}}
+}}{symlink_stanzas}
 
 prebuilt_firmware {{
     name: "linux_firmware_{name}",
@@ -244,6 +244,7 @@ def create_android_bp_file(ctx, name, license_kind, fw_files, required, symlink_
         license_files = format_android_bp_string_arr(['LICENSE']),
         fw_files = format_android_bp_string_arr(fw_files),
         required = format_android_bp_string_arr(required),
+        symlink_stanzas = '\n\n'.join(symlink_stanzas),
         year = ctx.now_as_string('yyyy'),
     )
     ctx.write_path(ctx.new_path(name + '/Android.bp'), output)
@@ -293,6 +294,14 @@ def set_commit_message(ctx, name):
     )
     ctx.set_message(output)
 
+symlink_template = \
+'''install_symlink {{
+    name: "{module_name}",
+    symlink_target: "{target}",
+    installed_location: "firmware/{link}",
+    vendor: true,
+}}'''
+
 # ##########################################################
 # Main transformation
 # ##########################################################
@@ -302,7 +311,9 @@ def _firmware_import_transform(ctx):
     license_kind = ctx.params['license_kind']
     expected_license_files = ctx.params['license_files']
     fw_files = ctx.params['fw_files']
-    required = ctx.params['required']
+    required = list(ctx.params['required'])
+    symlink_stanzas = ['']
+    non_symlink_fw_files = []
 
     # We will read the WHENCE to validate that the license upstream lists for
     # the fw_files matches the license we think we have.
@@ -329,11 +340,16 @@ def _firmware_import_transform(ctx):
 
     for f in fw_files:
         if file_info_map[f]['kind'] == 'Link':
-            dirname = (name + '/' + f).rsplit('/', 1)[0]
-            ctx.create_symlink(ctx.new_path(name + '/' + f),
-                               ctx.new_path(dirname + '/' + file_info_map[f]['link']))
+            symlink_module_name = "linux_firmware_%s-symlink-%d" % (name, len(symlink_stanzas))
+            symlink_stanzas.append(symlink_template.format(
+                module_name = symlink_module_name,
+                link = f,
+                target = file_info_map[f]['link'],
+            ))
+            required.append(symlink_module_name)
         else:
             ctx.run(core.move(f, name + '/' + f))
+            non_symlink_fw_files.append(f)
 
     # Look for indirectly referenced license files since we'll need those too.
     license_files = find_indirect_files(license_text)
@@ -349,7 +365,8 @@ def _firmware_import_transform(ctx):
 
     create_license_file(ctx, name, license_text, license_files, fw_files)
     create_metadata_file(ctx, name)
-    create_android_bp_file(ctx, name, license_kind, fw_files, required)
+    create_android_bp_file(ctx, name, license_kind, non_symlink_fw_files,
+                           required, symlink_stanzas)
     set_commit_message(ctx, name)
 
     # We don't actually want 'WHENCE' in the destination but we need to read it
