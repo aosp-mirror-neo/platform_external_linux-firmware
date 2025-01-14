@@ -453,6 +453,36 @@ firmware_import_workflow(
     ],
 )
 
+# Realtek RTL8822C Bluetooth chipset
+firmware_import_workflow(
+    name = 'btusb-r8822cu',
+    license_kind = 'BSD-Binary-Only',
+    license_files = [
+        'LICENCE.rtlwifi_firmware.txt',
+    ],
+    fw_files = [
+        'rtl_bt/rtl8822cu_fw.bin',
+        'rtl_bt/rtl8822cu_config.bin',
+    ],
+    required = [
+        # One of our files is a symlink to this one so depend on it.
+        'linux_firmware_btusb-rtl8761bu_config',
+    ],
+)
+
+# Realtek RTL8761BU Bluetooth Config
+# Separated out since several similar BT chipsets symlink to it.
+firmware_import_workflow(
+    name = 'btusb-rtl8761bu_config',
+    license_kind = 'BSD-Binary-Only',
+    license_files = [
+        'LICENCE.rtlwifi_firmware.txt',
+    ],
+    fw_files = [
+        'rtl_bt/rtl8761bu_config.bin',
+    ],
+)
+
 # Intel AX201 Wireless MAC (API Revision 0x77)
 firmware_import_workflow(
     name = 'iwlwifi-QuZ-a0-hr-b0-77',
@@ -492,5 +522,18 @@ firmware_import_workflow(
     ],
     fw_files = [
         'rt2870.bin',
+    ],
+)
+
+# Realtek RTL8822C Wireless MAC
+firmware_import_workflow(
+    name = 'rtw88-rtw8822c',
+    license_kind = 'BSD-Binary-Only',
+    license_files = [
+        'LICENCE.rtlwifi_firmware.txt',
+    ],
+    fw_files = [
+        'rtw88/rtw8822c_fw.bin',
+        'rtw88/rtw8822c_wow_fw.bin',
     ],
 )
