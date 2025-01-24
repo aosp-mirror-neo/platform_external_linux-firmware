@@ -206,8 +206,6 @@ android_bp_template = \
 
 license {{
     name: "linux_firmware_{name}_license",
-    // Private visibility because nothing links against this. The kernel just
-    // asks for it to be loaded from disk by name.
     visibility: ["//visibility:private"],
     license_kinds: [{license_kinds}],
     license_text: [{license_files}],
@@ -215,6 +213,12 @@ license {{
 
 prebuilt_firmware {{
     name: "linux_firmware_{name}",
+    // In general linux-firmware gets pulled in by a product adding it
+    // to PRODUCT_PACKAGES, so we don't need visibility to anything outside
+    // of linux-firmware. We allow visibility between all the linux-firmware
+    // sub-packages so that one linux-firmare can use `required` for other
+    // linux-firmware.
+    visibility: ["//external/linux-firmware:__subpackages__"],
     licenses: ["linux_firmware_{name}_license"],
     srcs: [{fw_files}],
     dsts: [{fw_files}],
@@ -297,6 +301,7 @@ def set_commit_message(ctx, name):
 symlink_template = \
 '''install_symlink {{
     name: "{module_name}",
+    visibility: ["//visibility:private"],
     symlink_target: "{target}",
     installed_location: "firmware/{link}",
     vendor: true,
