@@ -492,6 +492,62 @@ firmware_import_workflow(
     ],
     fw_files = [
         'iwlwifi-QuZ-a0-hr-b0-77.ucode',
+    ]
+)
+
+# MediaTek MT7921 Wireless MACs
+#
+# NOTE: though the filename uses 7961, the description in upstream WHENCE
+# and ChromeOS call this 7921.
+firmware_import_workflow(
+    name = 'mt7921',
+    license_kind = 'legacy_by_exception_only',
+    license_files = [
+        'LICENCE.mediatek',
+    ],
+    fw_files = [
+        'mediatek/WIFI_MT7961_patch_mcu_1_2_hdr.bin',
+        'mediatek/WIFI_RAM_CODE_MT7961_1.bin',
+    ],
+)
+
+# MediaTek MT7921 bluetooth chipset
+#
+# NOTE: though the filename uses 7961, the description in upstream WHENCE
+# and ChromeOS call this 7921.
+firmware_import_workflow(
+    name = 'mt7921-bt',
+    license_kind = 'legacy_by_exception_only',
+    license_files = [
+        'LICENCE.mediatek',
+    ],
+    fw_files = [
+        'mediatek/BT_RAM_CODE_MT7961_1_2_hdr.bin',
+    ],
+)
+
+# MediaTek MT7922 Wireless MACs
+firmware_import_workflow(
+    name = 'mt7922',
+    license_kind = 'legacy_by_exception_only',
+    license_files = [
+        'LICENCE.mediatek',
+    ],
+    fw_files = [
+        'mediatek/WIFI_MT7922_patch_mcu_1_1_hdr.bin',
+        'mediatek/WIFI_RAM_CODE_MT7922_1.bin',
+    ],
+)
+
+# MediaTek MT7922 bluetooth chipset
+firmware_import_workflow(
+    name = 'mt7922-bt',
+    license_kind = 'legacy_by_exception_only',
+    license_files = [
+        'LICENCE.mediatek',
+    ],
+    fw_files = [
+        'mediatek/BT_RAM_CODE_MT7922_1_1_hdr.bin',
     ],
 )
 
