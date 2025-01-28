@@ -16,8 +16,6 @@
 
 license {
     name: "linux_firmware_rtw88-rtw8822c_license",
-    // Private visibility because nothing links against this. The kernel just
-    // asks for it to be loaded from disk by name.
     visibility: ["//visibility:private"],
     license_kinds: ["BSD-Binary-Only"],
     license_text: ["LICENSE"],
@@ -25,6 +23,12 @@ license {
 
 prebuilt_firmware {
     name: "linux_firmware_rtw88-rtw8822c",
+    // In general linux-firmware gets pulled in by a product adding it
+    // to PRODUCT_PACKAGES, so we don't need visibility to anything outside
+    // of linux-firmware. We allow visibility between all the linux-firmware
+    // sub-packages so that one linux-firmare can use `required` for other
+    // linux-firmware.
+    visibility: ["//external/linux-firmware:__subpackages__"],
     licenses: ["linux_firmware_rtw88-rtw8822c_license"],
     srcs: [
         "rtw88/rtw8822c_fw.bin",
