@@ -39,12 +39,19 @@ git fetch goog main
 git log --reverse --format=%B --grep='^IMPORT:' aosp/main | grep '^Change-Id:' > "${aosp_changes}" || true
 git log --reverse --format=%B --grep='^IMPORT:' goog/main | grep '^Change-Id:' > "${goog_changes}" || true
 
-new_change_ids="$(diff "${aosp_changes}" "${goog_changes}" | grep '^>' | awk '{print $3}')"
+declare -A already_picked_dict
+for change_id in $(cat "${aosp_changes}"); do
+  already_picked_dict["${change_id}"]=1
+done
 
 echo
 echo "Picking..."
 
-for change_id in ${new_change_ids}; do
+for change_id in $(cat "${goog_changes}"); do
+  if [[ -n "${already_picked_dict["${change_id}"]}" ]]; then
+    continue
+  fi
+
   hash="$(git log --format=%H --grep="^Change-Id: ${change_id}" goog/main)"
   echo "Picking $(git log --oneline -1 ${hash})"
 

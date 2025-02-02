@@ -16,8 +16,6 @@
 
 license {
     name: "linux_firmware_btusb-r8822cu_license",
-    // Private visibility because nothing links against this. The kernel just
-    // asks for it to be loaded from disk by name.
     visibility: ["//visibility:private"],
     license_kinds: ["BSD-Binary-Only"],
     license_text: ["LICENSE"],
@@ -25,6 +23,7 @@ license {
 
 install_symlink {
     name: "linux_firmware_btusb-r8822cu-symlink-1",
+    visibility: ["//visibility:private"],
     symlink_target: "rtl8761bu_config.bin",
     installed_location: "firmware/rtl_bt/rtl8822cu_config.bin",
     vendor: true,
@@ -32,6 +31,12 @@ install_symlink {
 
 prebuilt_firmware {
     name: "linux_firmware_btusb-r8822cu",
+    // In general linux-firmware gets pulled in by a product adding it
+    // to PRODUCT_PACKAGES, so we don't need visibility to anything outside
+    // of linux-firmware. We allow visibility between all the linux-firmware
+    // sub-packages so that one linux-firmare can use `required` for other
+    // linux-firmware.
+    visibility: ["//external/linux-firmware:__subpackages__"],
     licenses: ["linux_firmware_btusb-r8822cu_license"],
     srcs: ["rtl_bt/rtl8822cu_fw.bin"],
     dsts: ["rtl_bt/rtl8822cu_fw.bin"],
