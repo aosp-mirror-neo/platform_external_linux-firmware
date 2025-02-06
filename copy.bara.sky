@@ -206,24 +206,31 @@ android_bp_template = \
 
 license {{
     name: "linux_firmware_{name}_license",
-    // Private visibility because nothing links against this. The kernel just
-    // asks for it to be loaded from disk by name.
     visibility: ["//visibility:private"],
     license_kinds: [{license_kinds}],
     license_text: [{license_files}],
-}}
+}}{symlink_stanzas}
 
 prebuilt_firmware {{
     name: "linux_firmware_{name}",
+    // In general linux-firmware gets pulled in by a product adding it
+    // to PRODUCT_PACKAGES, so we don't need visibility to anything outside
+    // of linux-firmware. We allow visibility between all the linux-firmware
+    // sub-packages so that one linux-firmare can use `required` for other
+    // linux-firmware.
+    visibility: ["//external/linux-firmware:__subpackages__"],
     licenses: ["linux_firmware_{name}_license"],
     srcs: [{fw_files}],
     dsts: [{fw_files}],
     vendor: true,
+    required: [{required}],
 }}
 '''
 
 # Format the an array of strings to go into Android.bp
 def format_android_bp_string_arr(a):
+    if len(a) == 0:
+        return ""
     if len(a) == 1:
         return '"%s"' % a[0]
 
@@ -234,12 +241,14 @@ def format_android_bp_string_arr(a):
            ',\n' + indent_per
 
 # Automatically create the Android.bp file under the directory `name`.
-def create_android_bp_file(ctx, name, license_kind, fw_files):
+def create_android_bp_file(ctx, name, license_kind, fw_files, required, symlink_stanzas):
     output = android_bp_template.format(
         name = name,
         license_kinds = format_android_bp_string_arr([license_kind]),
         license_files = format_android_bp_string_arr(['LICENSE']),
         fw_files = format_android_bp_string_arr(fw_files),
+        required = format_android_bp_string_arr(required),
+        symlink_stanzas = '\n\n'.join(symlink_stanzas),
         year = ctx.now_as_string('yyyy'),
     )
     ctx.write_path(ctx.new_path(name + '/Android.bp'), output)
@@ -267,15 +276,17 @@ def create_license_file(ctx, name, license_text, license_files, fw_files):
 commit_message_template = \
 '''IMPORT: {name}
 
-Import firmware "{name}" using copybara.
+Import linux-firmware "{name}" using copybara.
+
+NOTE: linux-firmware is not like most android3p reviews. See
+go/android-linux-firmware for some details.
 
 Third-Party Import of: {upstream_git_repo}
 Request Document: go/android3p
-For CL Reviewers: go/android3p#reviewing-a-cl
-For Build Team: go/ab-third-party-imports
-Security Questionnaire: REPLACE WITH bug filed by go/android3p process
-Bug: REPLACE WITH motivation bug
-Bug: REPLACE WITH bug filed by go/android3p process
+For CL Reviewers: go/android-linux-firmware:reviewers
+Security Questionnaire: b:{{REPLACE WITH bug filed by go/android3p process}}
+Bug: {{REPLACE WITH motivation bug without b: prefix}}
+Bug: {{REPLACE WITH bug filed by go/android3p process without b: prefix}}
 Test: None
 '''
 
@@ -287,6 +298,15 @@ def set_commit_message(ctx, name):
     )
     ctx.set_message(output)
 
+symlink_template = \
+'''install_symlink {{
+    name: "{module_name}",
+    visibility: ["//visibility:private"],
+    symlink_target: "{target}",
+    installed_location: "firmware/{link}",
+    vendor: true,
+}}'''
+
 # ##########################################################
 # Main transformation
 # ##########################################################
@@ -296,6 +316,9 @@ def _firmware_import_transform(ctx):
     license_kind = ctx.params['license_kind']
     expected_license_files = ctx.params['license_files']
     fw_files = ctx.params['fw_files']
+    required = list(ctx.params['required'])
+    symlink_stanzas = ['']
+    non_symlink_fw_files = []
 
     # We will read the WHENCE to validate that the license upstream lists for
     # the fw_files matches the license we think we have.
@@ -322,11 +345,16 @@ def _firmware_import_transform(ctx):
 
     for f in fw_files:
         if file_info_map[f]['kind'] == 'Link':
-            dirname = (name + '/' + f).rsplit('/', 1)[0]
-            ctx.create_symlink(ctx.new_path(name + '/' + f),
-                               ctx.new_path(dirname + '/' + file_info_map[f]['link']))
+            symlink_module_name = "linux_firmware_%s-symlink-%d" % (name, len(symlink_stanzas))
+            symlink_stanzas.append(symlink_template.format(
+                module_name = symlink_module_name,
+                link = f,
+                target = file_info_map[f]['link'],
+            ))
+            required.append(symlink_module_name)
         else:
             ctx.run(core.move(f, name + '/' + f))
+            non_symlink_fw_files.append(f)
 
     # Look for indirectly referenced license files since we'll need those too.
     license_files = find_indirect_files(license_text)
@@ -342,7 +370,8 @@ def _firmware_import_transform(ctx):
 
     create_license_file(ctx, name, license_text, license_files, fw_files)
     create_metadata_file(ctx, name)
-    create_android_bp_file(ctx, name, license_kind, fw_files)
+    create_android_bp_file(ctx, name, license_kind, non_symlink_fw_files,
+                           required, symlink_stanzas)
     set_commit_message(ctx, name)
 
     # We don't actually want 'WHENCE' in the destination but we need to read it
@@ -352,7 +381,7 @@ def _firmware_import_transform(ctx):
                    'Upstream WHENCE is parsed to confirm licenses; not copied here.\n')
 
 # Create a workflow for the given files.
-def firmware_import_workflow(name, license_kind, license_files, fw_files):
+def firmware_import_workflow(name, license_kind, license_files, fw_files, required=[]):
     return core.workflow(
         name = name,
         authoring = authoring.overwrite('linux-firmware importer <noreply@google.com>'),
@@ -390,6 +419,7 @@ def firmware_import_workflow(name, license_kind, license_files, fw_files):
                     'license_kind': license_kind,
                     'license_files': license_files,
                     'fw_files': fw_files,
+                    'required': required,
                 },
             ),
         ]
@@ -398,6 +428,133 @@ def firmware_import_workflow(name, license_kind, license_files, fw_files):
 # ##########################################################
 # Firmware that we manage, sorted alphabetically
 # ##########################################################
+
+# Intel AX201 Bluetooth chip
+firmware_import_workflow(
+    name = 'btusb-ibt_ax201',
+    license_kind = 'BSD-Binary-Only',
+    license_files = [
+        'LICENCE.ibt_firmware',
+    ],
+    fw_files = [
+        'intel/ibt-19-0-0.ddc',
+        'intel/ibt-19-0-0.sfi',
+        'intel/ibt-19-0-1.ddc',
+        'intel/ibt-19-0-1.sfi',
+        'intel/ibt-19-0-4.ddc',
+        'intel/ibt-19-0-4.sfi',
+        'intel/ibt-19-16-4.ddc',
+        'intel/ibt-19-16-4.sfi',
+        'intel/ibt-19-32-0.ddc',
+        'intel/ibt-19-32-0.sfi',
+        'intel/ibt-19-32-1.ddc',
+        'intel/ibt-19-32-1.sfi',
+        'intel/ibt-19-32-4.ddc',
+        'intel/ibt-19-32-4.sfi',
+        'intel/ibt-19-240-1.ddc',
+        'intel/ibt-19-240-1.sfi',
+        'intel/ibt-19-240-4.ddc',
+        'intel/ibt-19-240-4.sfi',
+    ],
+)
+
+# Realtek RTL8822C Bluetooth chipset
+firmware_import_workflow(
+    name = 'btusb-r8822cu',
+    license_kind = 'BSD-Binary-Only',
+    license_files = [
+        'LICENCE.rtlwifi_firmware.txt',
+    ],
+    fw_files = [
+        'rtl_bt/rtl8822cu_fw.bin',
+        'rtl_bt/rtl8822cu_config.bin',
+    ],
+    required = [
+        # One of our files is a symlink to this one so depend on it.
+        'linux_firmware_btusb-rtl8761bu_config',
+    ],
+)
+
+# Realtek RTL8761BU Bluetooth Config
+# Separated out since several similar BT chipsets symlink to it.
+firmware_import_workflow(
+    name = 'btusb-rtl8761bu_config',
+    license_kind = 'BSD-Binary-Only',
+    license_files = [
+        'LICENCE.rtlwifi_firmware.txt',
+    ],
+    fw_files = [
+        'rtl_bt/rtl8761bu_config.bin',
+    ],
+)
+
+# Intel AX201 Wireless MAC (API Revision 0x77)
+firmware_import_workflow(
+    name = 'iwlwifi-QuZ-a0-hr-b0-77',
+    license_kind = 'BSD-Binary-Only',
+    license_files = [
+        'LICENCE.iwlwifi_firmware',
+    ],
+    fw_files = [
+        'iwlwifi-QuZ-a0-hr-b0-77.ucode',
+    ]
+)
+
+# MediaTek MT7921 Wireless MACs
+#
+# NOTE: though the filename uses 7961, the description in upstream WHENCE
+# and ChromeOS call this 7921.
+firmware_import_workflow(
+    name = 'mt7921',
+    license_kind = 'legacy_by_exception_only',
+    license_files = [
+        'LICENCE.mediatek',
+    ],
+    fw_files = [
+        'mediatek/WIFI_MT7961_patch_mcu_1_2_hdr.bin',
+        'mediatek/WIFI_RAM_CODE_MT7961_1.bin',
+    ],
+)
+
+# MediaTek MT7921 bluetooth chipset
+#
+# NOTE: though the filename uses 7961, the description in upstream WHENCE
+# and ChromeOS call this 7921.
+firmware_import_workflow(
+    name = 'mt7921-bt',
+    license_kind = 'legacy_by_exception_only',
+    license_files = [
+        'LICENCE.mediatek',
+    ],
+    fw_files = [
+        'mediatek/BT_RAM_CODE_MT7961_1_2_hdr.bin',
+    ],
+)
+
+# MediaTek MT7922 Wireless MACs
+firmware_import_workflow(
+    name = 'mt7922',
+    license_kind = 'legacy_by_exception_only',
+    license_files = [
+        'LICENCE.mediatek',
+    ],
+    fw_files = [
+        'mediatek/WIFI_MT7922_patch_mcu_1_1_hdr.bin',
+        'mediatek/WIFI_RAM_CODE_MT7922_1.bin',
+    ],
+)
+
+# MediaTek MT7922 bluetooth chipset
+firmware_import_workflow(
+    name = 'mt7922-bt',
+    license_kind = 'legacy_by_exception_only',
+    license_files = [
+        'LICENCE.mediatek',
+    ],
+    fw_files = [
+        'mediatek/BT_RAM_CODE_MT7922_1_1_hdr.bin',
+    ],
+)
 
 # Realtek r8152 (and related) USB Ethernet adapters
 firmware_import_workflow(
@@ -426,5 +583,18 @@ firmware_import_workflow(
     ],
     fw_files = [
         'rt2870.bin',
+    ],
+)
+
+# Realtek RTL8822C Wireless MAC
+firmware_import_workflow(
+    name = 'rtw88-rtw8822c',
+    license_kind = 'BSD-Binary-Only',
+    license_files = [
+        'LICENCE.rtlwifi_firmware.txt',
+    ],
+    fw_files = [
+        'rtw88/rtw8822c_fw.bin',
+        'rtw88/rtw8822c_wow_fw.bin',
     ],
 )
