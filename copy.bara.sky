@@ -518,6 +518,88 @@ firmware_import_workflow(
     ],
 )
 
+# Intel i915 GPU firmware for ADL-based platforms
+firmware_import_workflow(
+    name = 'i915_adl',
+    license_kind = 'BSD-Binary-Only',
+    license_files = [
+        'LICENSE.i915',
+    ],
+    fw_files = [
+        'i915/adlp_dmc.bin',
+        'i915/adlp_dmc_ver2_09.bin',
+        'i915/adlp_dmc_ver2_10.bin',
+        'i915/adlp_dmc_ver2_12.bin',
+        'i915/adlp_dmc_ver2_14.bin',
+        'i915/adlp_dmc_ver2_16.bin',
+        'i915/adlp_guc_62.0.3.bin',
+        'i915/adlp_guc_69.0.3.bin',
+        'i915/adlp_guc_70.1.1.bin',
+        'i915/adlp_guc_70.bin',
+        'i915/adls_dmc_ver2_01.bin',
+    ],
+    recovery = 'true',
+)
+
+# Intel i915 GPU firmware for MTL-based platforms
+firmware_import_workflow(
+    name = 'i915_mtl',
+    license_kind = 'BSD-Binary-Only',
+    license_files = [
+        'LICENSE.i915',
+    ],
+    fw_files = [
+        'i915/mtl_dmc.bin',
+        'i915/mtl_dmc_ver2_10.bin',
+        'i915/mtl_gsc_1.bin',
+        'i915/mtl_guc_70.bin',
+        'i915/mtl_huc_gsc.bin',
+    ],
+    recovery = 'true',
+)
+
+# Intel i915 GPU firmware for TGL-based platforms
+firmware_import_workflow(
+    name = 'i915_tgl',
+    license_kind = 'BSD-Binary-Only',
+    license_files = [
+        'LICENSE.i915',
+    ],
+    fw_files = [
+        'i915/tgl_dmc_ver2_04.bin',
+        'i915/tgl_dmc_ver2_06.bin',
+        'i915/tgl_dmc_ver2_08.bin',
+        'i915/tgl_dmc_ver2_12.bin',
+        'i915/tgl_guc_35.2.0.bin',
+        'i915/tgl_guc_49.0.1.bin',
+        'i915/tgl_guc_62.0.0.bin',
+        'i915/tgl_guc_69.0.3.bin',
+        'i915/tgl_guc_70.1.1.bin',
+        'i915/tgl_guc_70.bin',
+        'i915/tgl_huc_7.0.12.bin',
+        'i915/tgl_huc_7.0.3.bin',
+        'i915/tgl_huc_7.5.0.bin',
+        'i915/tgl_huc_7.9.3.bin',
+        'i915/tgl_huc.bin',
+    ],
+
+    recovery = 'true',
+)
+
+# Intel i915 GPU firmware for XE-based platforms
+firmware_import_workflow(
+    name = 'i915_xe',
+    license_kind = 'BSD-Binary-Only',
+    license_files = [
+        'LICENSE.i915',
+    ],
+    fw_files = [
+        'i915/xe2lpd_dmc.bin',
+        'i915/xe3lpd_dmc.bin',
+    ],
+    recovery = 'true',
+)
+
 # Intel AX201 Wireless MAC (API Revision 0x77)
 firmware_import_workflow(
     name = 'iwlwifi-QuZ-a0-hr-b0-77',
