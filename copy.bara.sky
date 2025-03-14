@@ -227,24 +227,6 @@ prebuilt_firmware {{
 }}
 '''
 
-android_bp_template_recovery = \
-'''
-prebuilt_firmware {{
-    name: "linux_firmware_{name}_recovery",
-    // In general linux-firmware gets pulled in by a product adding it
-    // to PRODUCT_PACKAGES, so we don't need visibility to anything outside
-    // of linux-firmware. We allow visibility between all the linux-firmware
-    // sub-packages so that one linux-firmare can use `required` for other
-    // linux-firmware.
-    visibility: ["//external/linux-firmware:__subpackages__"],
-    licenses: ["linux_firmware_{name}_license"],
-    srcs: [{fw_files}],
-    dsts: [{fw_files}],
-    recovery: true,
-    required: [{required}],
-}}
-'''
-
 # Format the an array of strings to go into Android.bp
 def format_android_bp_string_arr(a):
     if len(a) == 0:
@@ -259,26 +241,16 @@ def format_android_bp_string_arr(a):
            ',\n' + indent_per
 
 # Automatically create the Android.bp file under the directory `name`.
-def create_android_bp_file(ctx, name, license_kind, fw_files, required,
-                           symlink_stanzas, recovery):
+def create_android_bp_file(ctx, name, license_kind, fw_files, required, symlink_stanzas):
     output = android_bp_template.format(
         name = name,
         license_kinds = format_android_bp_string_arr([license_kind]),
         license_files = format_android_bp_string_arr(['LICENSE']),
         fw_files = format_android_bp_string_arr(fw_files),
         required = format_android_bp_string_arr(required),
-        recovery = recovery,
         symlink_stanzas = '\n\n'.join(symlink_stanzas),
         year = ctx.now_as_string('yyyy'),
     )
-
-    if recovery:
-        output += android_bp_template_recovery.format(
-            name = name,
-            fw_files = format_android_bp_string_arr(fw_files),
-            required = format_android_bp_string_arr(required),
-        )
-
     ctx.write_path(ctx.new_path(name + '/Android.bp'), output)
 
 # Create the LICENSE file containing all relevant license text.
@@ -344,7 +316,6 @@ def _firmware_import_transform(ctx):
     expected_license_files = ctx.params['license_files']
     fw_files = ctx.params['fw_files']
     required = list(ctx.params['required'])
-    recovery = ctx.params['recovery']
     symlink_stanzas = ['']
     non_symlink_fw_files = []
 
@@ -399,7 +370,7 @@ def _firmware_import_transform(ctx):
     create_license_file(ctx, name, license_text, license_files, fw_files)
     create_metadata_file(ctx, name)
     create_android_bp_file(ctx, name, license_kind, non_symlink_fw_files,
-                           required, symlink_stanzas, recovery)
+                           required, symlink_stanzas)
     set_commit_message(ctx, name)
 
     # We don't actually want 'WHENCE' in the destination but we need to read it
@@ -409,8 +380,7 @@ def _firmware_import_transform(ctx):
                    'Upstream WHENCE is parsed to confirm licenses; not copied here.\n')
 
 # Create a workflow for the given files.
-def firmware_import_workflow(name, license_kind, license_files,
-                             fw_files, required=[], recovery=False):
+def firmware_import_workflow(name, license_kind, license_files, fw_files, required=[]):
     return core.workflow(
         name = name,
         authoring = authoring.overwrite('linux-firmware importer <noreply@google.com>'),
@@ -449,7 +419,6 @@ def firmware_import_workflow(name, license_kind, license_files,
                     'license_files': license_files,
                     'fw_files': fw_files,
                     'required': required,
-                    'recovery': recovery,
                 },
             ),
         ]
