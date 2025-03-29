@@ -227,6 +227,24 @@ prebuilt_firmware {{
 }}
 '''
 
+android_bp_template_recovery = \
+'''
+prebuilt_firmware {{
+    name: "linux_firmware_{name}_recovery",
+    // In general linux-firmware gets pulled in by a product adding it
+    // to PRODUCT_PACKAGES, so we don't need visibility to anything outside
+    // of linux-firmware. We allow visibility between all the linux-firmware
+    // sub-packages so that one linux-firmare can use `required` for other
+    // linux-firmware.
+    visibility: ["//external/linux-firmware:__subpackages__"],
+    licenses: ["linux_firmware_{name}_license"],
+    srcs: [{fw_files}],
+    dsts: [{fw_files}],
+    recovery: true,
+    required: [{required}],
+}}
+'''
+
 # Format the an array of strings to go into Android.bp
 def format_android_bp_string_arr(a):
     if len(a) == 0:
@@ -241,16 +259,26 @@ def format_android_bp_string_arr(a):
            ',\n' + indent_per
 
 # Automatically create the Android.bp file under the directory `name`.
-def create_android_bp_file(ctx, name, license_kind, fw_files, required, symlink_stanzas):
+def create_android_bp_file(ctx, name, license_kind, fw_files, required,
+                           symlink_stanzas, recovery):
     output = android_bp_template.format(
         name = name,
         license_kinds = format_android_bp_string_arr([license_kind]),
         license_files = format_android_bp_string_arr(['LICENSE']),
         fw_files = format_android_bp_string_arr(fw_files),
         required = format_android_bp_string_arr(required),
+        recovery = recovery,
         symlink_stanzas = '\n\n'.join(symlink_stanzas),
         year = ctx.now_as_string('yyyy'),
     )
+
+    if recovery:
+        output += android_bp_template_recovery.format(
+            name = name,
+            fw_files = format_android_bp_string_arr(fw_files),
+            required = format_android_bp_string_arr(required),
+        )
+
     ctx.write_path(ctx.new_path(name + '/Android.bp'), output)
 
 # Create the LICENSE file containing all relevant license text.
@@ -316,6 +344,7 @@ def _firmware_import_transform(ctx):
     expected_license_files = ctx.params['license_files']
     fw_files = ctx.params['fw_files']
     required = list(ctx.params['required'])
+    recovery = ctx.params['recovery']
     symlink_stanzas = ['']
     non_symlink_fw_files = []
 
@@ -370,7 +399,7 @@ def _firmware_import_transform(ctx):
     create_license_file(ctx, name, license_text, license_files, fw_files)
     create_metadata_file(ctx, name)
     create_android_bp_file(ctx, name, license_kind, non_symlink_fw_files,
-                           required, symlink_stanzas)
+                           required, symlink_stanzas, recovery)
     set_commit_message(ctx, name)
 
     # We don't actually want 'WHENCE' in the destination but we need to read it
@@ -380,7 +409,8 @@ def _firmware_import_transform(ctx):
                    'Upstream WHENCE is parsed to confirm licenses; not copied here.\n')
 
 # Create a workflow for the given files.
-def firmware_import_workflow(name, license_kind, license_files, fw_files, required=[]):
+def firmware_import_workflow(name, license_kind, license_files,
+                             fw_files, required=[], recovery=False):
     return core.workflow(
         name = name,
         authoring = authoring.overwrite('linux-firmware importer <noreply@google.com>'),
@@ -419,6 +449,7 @@ def firmware_import_workflow(name, license_kind, license_files, fw_files, requir
                     'license_files': license_files,
                     'fw_files': fw_files,
                     'required': required,
+                    'recovery': recovery,
                 },
             ),
         ]
@@ -485,6 +516,88 @@ firmware_import_workflow(
     fw_files = [
         'rtl_bt/rtl8761bu_config.bin',
     ],
+)
+
+# Intel i915 GPU firmware for ADL-based platforms
+firmware_import_workflow(
+    name = 'i915_adl',
+    license_kind = 'BSD-Binary-Only',
+    license_files = [
+        'LICENSE.i915',
+    ],
+    fw_files = [
+        'i915/adlp_dmc.bin',
+        'i915/adlp_dmc_ver2_09.bin',
+        'i915/adlp_dmc_ver2_10.bin',
+        'i915/adlp_dmc_ver2_12.bin',
+        'i915/adlp_dmc_ver2_14.bin',
+        'i915/adlp_dmc_ver2_16.bin',
+        'i915/adlp_guc_62.0.3.bin',
+        'i915/adlp_guc_69.0.3.bin',
+        'i915/adlp_guc_70.1.1.bin',
+        'i915/adlp_guc_70.bin',
+        'i915/adls_dmc_ver2_01.bin',
+    ],
+    recovery = 'true',
+)
+
+# Intel i915 GPU firmware for MTL-based platforms
+firmware_import_workflow(
+    name = 'i915_mtl',
+    license_kind = 'BSD-Binary-Only',
+    license_files = [
+        'LICENSE.i915',
+    ],
+    fw_files = [
+        'i915/mtl_dmc.bin',
+        'i915/mtl_dmc_ver2_10.bin',
+        'i915/mtl_gsc_1.bin',
+        'i915/mtl_guc_70.bin',
+        'i915/mtl_huc_gsc.bin',
+    ],
+    recovery = 'true',
+)
+
+# Intel i915 GPU firmware for TGL-based platforms
+firmware_import_workflow(
+    name = 'i915_tgl',
+    license_kind = 'BSD-Binary-Only',
+    license_files = [
+        'LICENSE.i915',
+    ],
+    fw_files = [
+        'i915/tgl_dmc_ver2_04.bin',
+        'i915/tgl_dmc_ver2_06.bin',
+        'i915/tgl_dmc_ver2_08.bin',
+        'i915/tgl_dmc_ver2_12.bin',
+        'i915/tgl_guc_35.2.0.bin',
+        'i915/tgl_guc_49.0.1.bin',
+        'i915/tgl_guc_62.0.0.bin',
+        'i915/tgl_guc_69.0.3.bin',
+        'i915/tgl_guc_70.1.1.bin',
+        'i915/tgl_guc_70.bin',
+        'i915/tgl_huc_7.0.12.bin',
+        'i915/tgl_huc_7.0.3.bin',
+        'i915/tgl_huc_7.5.0.bin',
+        'i915/tgl_huc_7.9.3.bin',
+        'i915/tgl_huc.bin',
+    ],
+
+    recovery = 'true',
+)
+
+# Intel i915 GPU firmware for XE-based platforms
+firmware_import_workflow(
+    name = 'i915_xe',
+    license_kind = 'BSD-Binary-Only',
+    license_files = [
+        'LICENSE.i915',
+    ],
+    fw_files = [
+        'i915/xe2lpd_dmc.bin',
+        'i915/xe3lpd_dmc.bin',
+    ],
+    recovery = 'true',
 )
 
 # Intel AX201 Wireless MAC (API Revision 0x77)
