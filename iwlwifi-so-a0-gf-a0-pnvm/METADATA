@@ -1,0 +1,16 @@
+name: "linux-firmware-iwlwifi-so-a0-gf-a0-pnvm"
+description:
+    "Contains an import of upstream linux-firmware for iwlwifi-so-a0-gf-a0-pnvm."
+
+third_party {
+  homepage: "https://gitlab.com/kernel-firmware/linux-firmware.git"
+  identifier {
+    type: "Git"
+    value: "https://gitlab.com/kernel-firmware/linux-firmware.git"
+    primary_source: true
+    version: "6a006cef10cebfaa282100a81cb45ad3a9212721"
+  }
+  version: "6a006cef10cebfaa282100a81cb45ad3a9212721"
+  last_upgrade_date { year: 2025 month: 4 day: 11 }
+  license_type: BY_EXCEPTION_ONLY
+}

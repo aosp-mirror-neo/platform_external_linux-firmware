@@ -612,6 +612,30 @@ firmware_import_workflow(
     ]
 )
 
+# Intel AX211 Wireless MAC (API Revision 0x89)
+firmware_import_workflow(
+    name = 'iwlwifi-so-a0-gf-a0-89',
+    license_kind = 'BSD-Binary-Only',
+    license_files = [
+        'LICENCE.iwlwifi_firmware',
+    ],
+    fw_files = [
+        'iwlwifi-so-a0-gf-a0-89.ucode',
+    ],
+)
+
+# Intel AX211 Wireless MAC (PNVM file)
+firmware_import_workflow(
+    name = 'iwlwifi-so-a0-gf-a0-pnvm',
+    license_kind = 'BSD-Binary-Only',
+    license_files = [
+        'LICENCE.iwlwifi_firmware',
+    ],
+    fw_files = [
+        'iwlwifi-so-a0-gf-a0.pnvm',
+    ],
+)
+
 # MediaTek MT7921 Wireless MACs
 #
 # NOTE: though the filename uses 7961, the description in upstream WHENCE
