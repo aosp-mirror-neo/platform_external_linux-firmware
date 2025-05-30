@@ -1,0 +1,16 @@
+name: "linux-firmware-btusb-ibt_ax211"
+description:
+    "Contains an import of upstream linux-firmware for btusb-ibt_ax211."
+
+third_party {
+  homepage: "https://gitlab.com/kernel-firmware/linux-firmware.git"
+  identifier {
+    type: "Git"
+    value: "https://gitlab.com/kernel-firmware/linux-firmware.git"
+    primary_source: true
+    version: "f2e9c60ae3116e82c12d2ee675a24fef5e3f1a45"
+  }
+  version: "f2e9c60ae3116e82c12d2ee675a24fef5e3f1a45"
+  last_upgrade_date { year: 2025 month: 6 day: 3 }
+  license_type: BY_EXCEPTION_ONLY
+}
