@@ -488,6 +488,19 @@ firmware_import_workflow(
     ],
 )
 
+# Intel AX211 Bluetooth chip
+firmware_import_workflow(
+    name = 'btusb-ibt_ax211',
+    license_kind = 'BSD-Binary-Only',
+    license_files = [
+        'LICENCE.ibt_firmware',
+    ],
+    fw_files = [
+        'intel/ibt-0040-0041.ddc',
+        'intel/ibt-0040-0041.sfi',
+    ],
+)
+
 # Realtek RTL8822C Bluetooth chipset
 firmware_import_workflow(
     name = 'btusb-r8822cu',
