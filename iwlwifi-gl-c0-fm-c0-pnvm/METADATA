@@ -1,0 +1,16 @@
+name: "linux-firmware-iwlwifi-gl-c0-fm-c0-pnvm"
+description:
+    "Contains an import of upstream linux-firmware for iwlwifi-gl-c0-fm-c0-pnvm."
+
+third_party {
+  homepage: "https://gitlab.com/kernel-firmware/linux-firmware.git"
+  identifier {
+    type: "Git"
+    value: "https://gitlab.com/kernel-firmware/linux-firmware.git"
+    primary_source: true
+    version: "b05fabcd6f2a16d50b5f86c389dde7a33f00bb81"
+  }
+  version: "b05fabcd6f2a16d50b5f86c389dde7a33f00bb81"
+  last_upgrade_date { year: 2025 month: 6 day: 25 }
+  license_type: BY_EXCEPTION_ONLY
+}
