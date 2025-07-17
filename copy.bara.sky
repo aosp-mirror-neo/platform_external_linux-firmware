@@ -718,6 +718,19 @@ firmware_import_workflow(
     ],
 )
 
+# MediaTek MT7925 Wireless MACs
+firmware_import_workflow(
+    name = 'mt7925',
+    license_kind = 'legacy_by_exception_only',
+    license_files = [
+        'LICENCE.mediatek',
+    ],
+    fw_files = [
+        'mediatek/mt7925/WIFI_MT7925_PATCH_MCU_1_1_hdr.bin',
+        'mediatek/mt7925/WIFI_RAM_CODE_MT7925_1_1.bin',
+    ],
+)
+
 # Realtek r8152 (and related) USB Ethernet adapters
 firmware_import_workflow(
     name = 'r8152',
