@@ -797,3 +797,17 @@ firmware_import_workflow(
         'rtw88/rtw8822c_wow_fw.bin',
     ],
 )
+
+# Intel Xe GPU firmware for PTL-based platforms
+firmware_import_workflow(
+    name = 'xe_ptl',
+    license_kind = 'BSD-Binary-Only',
+    license_files = [
+        'LICENSE.xe',
+    ],
+    fw_files = [
+        'xe/ptl_guc_70.bin',
+        'xe/ptl_huc.bin',
+    ],
+    recovery = 'true',
+)
