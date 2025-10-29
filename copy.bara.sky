@@ -647,6 +647,7 @@ firmware_import_workflow(
         'LICENCE.iwlwifi_firmware',
     ],
     fw_files = [
+        'intel/iwlwifi/iwlwifi-gl-c0-fm-c0.pnvm',
         'iwlwifi-gl-c0-fm-c0.pnvm',
     ],
 )
