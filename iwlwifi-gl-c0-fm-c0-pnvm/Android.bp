@@ -21,6 +21,14 @@ license {
     license_text: ["LICENSE"],
 }
 
+install_symlink {
+    name: "linux_firmware_iwlwifi-gl-c0-fm-c0-pnvm-symlink-1",
+    visibility: ["//visibility:private"],
+    symlink_target: "intel/iwlwifi/iwlwifi-gl-c0-fm-c0.pnvm",
+    installed_location: "firmware/iwlwifi-gl-c0-fm-c0.pnvm",
+    vendor: true,
+}
+
 prebuilt_firmware {
     name: "linux_firmware_iwlwifi-gl-c0-fm-c0-pnvm",
     // In general linux-firmware gets pulled in by a product adding it
@@ -30,8 +38,8 @@ prebuilt_firmware {
     // linux-firmware.
     visibility: ["//external/linux-firmware:__subpackages__"],
     licenses: ["linux_firmware_iwlwifi-gl-c0-fm-c0-pnvm_license"],
-    srcs: ["iwlwifi-gl-c0-fm-c0.pnvm"],
-    dsts: ["iwlwifi-gl-c0-fm-c0.pnvm"],
+    srcs: ["intel/iwlwifi/iwlwifi-gl-c0-fm-c0.pnvm"],
+    dsts: ["intel/iwlwifi/iwlwifi-gl-c0-fm-c0.pnvm"],
     vendor: true,
-    required: [],
+    required: ["linux_firmware_iwlwifi-gl-c0-fm-c0-pnvm-symlink-1"],
 }

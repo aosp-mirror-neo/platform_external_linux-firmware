@@ -628,13 +628,14 @@ firmware_import_workflow(
 
 # Intel BE200 Wireless MAC
 firmware_import_workflow(
-    name = 'iwlwifi-gl-c0-fm-c0-97',
+    name = 'iwlwifi-gl-c0-fm-c0-101',
     license_kind = 'BSD-Binary-Only',
     license_files = [
         'LICENCE.iwlwifi_firmware',
     ],
     fw_files = [
-        'iwlwifi-gl-c0-fm-c0-97.ucode',
+        'intel/iwlwifi/iwlwifi-gl-c0-fm-c0-101.ucode',
+        'iwlwifi-gl-c0-fm-c0-101.ucode',
     ],
 )
 
@@ -646,6 +647,7 @@ firmware_import_workflow(
         'LICENCE.iwlwifi_firmware',
     ],
     fw_files = [
+        'intel/iwlwifi/iwlwifi-gl-c0-fm-c0.pnvm',
         'iwlwifi-gl-c0-fm-c0.pnvm',
     ],
 )
