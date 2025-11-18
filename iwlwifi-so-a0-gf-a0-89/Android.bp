@@ -21,6 +21,14 @@ license {
     license_text: ["LICENSE"],
 }
 
+install_symlink {
+    name: "linux_firmware_iwlwifi-so-a0-gf-a0-89-symlink-1",
+    visibility: ["//visibility:private"],
+    symlink_target: "intel/iwlwifi/iwlwifi-so-a0-gf-a0-89.ucode",
+    installed_location: "firmware/iwlwifi-so-a0-gf-a0-89.ucode",
+    vendor: true,
+}
+
 prebuilt_firmware {
     name: "linux_firmware_iwlwifi-so-a0-gf-a0-89",
     // In general linux-firmware gets pulled in by a product adding it
@@ -30,8 +38,8 @@ prebuilt_firmware {
     // linux-firmware.
     visibility: ["//external/linux-firmware:__subpackages__"],
     licenses: ["linux_firmware_iwlwifi-so-a0-gf-a0-89_license"],
-    srcs: ["iwlwifi-so-a0-gf-a0-89.ucode"],
-    dsts: ["iwlwifi-so-a0-gf-a0-89.ucode"],
+    srcs: ["intel/iwlwifi/iwlwifi-so-a0-gf-a0-89.ucode"],
+    dsts: ["intel/iwlwifi/iwlwifi-so-a0-gf-a0-89.ucode"],
     vendor: true,
-    required: [],
+    required: ["linux_firmware_iwlwifi-so-a0-gf-a0-89-symlink-1"],
 }
