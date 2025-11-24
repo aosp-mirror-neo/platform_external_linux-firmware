@@ -660,6 +660,7 @@ firmware_import_workflow(
         'LICENCE.iwlwifi_firmware',
     ],
     fw_files = [
+        'intel/iwlwifi/iwlwifi-QuZ-a0-hr-b0-77.ucode',
         'iwlwifi-QuZ-a0-hr-b0-77.ucode',
     ]
 )
@@ -672,6 +673,7 @@ firmware_import_workflow(
         'LICENCE.iwlwifi_firmware',
     ],
     fw_files = [
+        'intel/iwlwifi/iwlwifi-so-a0-gf-a0-89.ucode',
         'iwlwifi-so-a0-gf-a0-89.ucode',
     ],
 )
@@ -684,6 +686,7 @@ firmware_import_workflow(
         'LICENCE.iwlwifi_firmware',
     ],
     fw_files = [
+        'intel/iwlwifi/iwlwifi-so-a0-gf-a0.pnvm',
         'iwlwifi-so-a0-gf-a0.pnvm',
     ],
 )
