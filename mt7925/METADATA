@@ -8,9 +8,9 @@ third_party {
     type: "Git"
     value: "https://gitlab.com/kernel-firmware/linux-firmware.git"
     primary_source: true
-    version: "e2dad11e8d4b169fdeac476d694d6ef8f2d3b5bf"
+    version: "e9d859f2804f78c3be3dbcfbbe12d3dd3f577142"
   }
-  version: "e2dad11e8d4b169fdeac476d694d6ef8f2d3b5bf"
-  last_upgrade_date { year: 2025 month: 7 day: 2 }
+  version: "e9d859f2804f78c3be3dbcfbbe12d3dd3f577142"
+  last_upgrade_date { year: 2025 month: 12 day: 4 }
   license_type: BY_EXCEPTION_ONLY
 }
