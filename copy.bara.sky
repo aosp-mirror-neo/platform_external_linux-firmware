@@ -626,7 +626,7 @@ firmware_import_workflow(
     recovery = 'true',
 )
 
-# Intel BE200 Wireless MAC
+# Intel BE200 Wireless MAC (API version 0x101)
 firmware_import_workflow(
     name = 'iwlwifi-gl-c0-fm-c0-101',
     license_kind = 'BSD-Binary-Only',
@@ -636,6 +636,19 @@ firmware_import_workflow(
     fw_files = [
         'intel/iwlwifi/iwlwifi-gl-c0-fm-c0-101.ucode',
         'iwlwifi-gl-c0-fm-c0-101.ucode',
+    ],
+)
+
+# Intel BE200 Wireless MAC (API version 0xC101)
+firmware_import_workflow(
+    name = 'iwlwifi-gl-c0-fm-c0-c101',
+    license_kind = 'BSD-Binary-Only',
+    license_files = [
+        'LICENCE.iwlwifi_firmware',
+    ],
+    fw_files = [
+        'intel/iwlwifi/iwlwifi-gl-c0-fm-c0-c101.ucode',
+        'iwlwifi-gl-c0-fm-c0-c101.ucode',
     ],
 )
 
@@ -649,6 +662,19 @@ firmware_import_workflow(
     fw_files = [
         'intel/iwlwifi/iwlwifi-gl-c0-fm-c0.pnvm',
         'iwlwifi-gl-c0-fm-c0.pnvm',
+    ],
+)
+
+# Intel BE211 Wireless MAC
+firmware_import_workflow(
+    name = 'iwlwifi-sc-a0-wh-b0-c101',
+    license_kind = 'BSD-Binary-Only',
+    license_files = [
+        'LICENCE.iwlwifi_firmware',
+    ],
+    fw_files = [
+        'intel/iwlwifi/iwlwifi-sc-a0-wh-b0-c101.ucode',
+        'iwlwifi-sc-a0-wh-b0-c101.ucode',
     ],
 )
 
