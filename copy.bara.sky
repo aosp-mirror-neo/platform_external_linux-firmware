@@ -514,6 +514,20 @@ firmware_import_workflow(
     ],
 )
 
+# Intel BE211 Bluetooth chip
+firmware_import_workflow(
+    name = 'btpci-ibt_be211',
+    license_kind = 'BSD-Binary-Only',
+    license_files = [
+        'LICENCE.ibt_firmware',
+    ],
+    fw_files = [
+        'intel/ibt-00a0-01a1-iml.sfi',
+        'intel/ibt-00a0-01a1-pci.ddc',
+        'intel/ibt-00a0-01a1-pci.sfi',
+    ],
+)
+
 # Realtek RTL8822C Bluetooth chipset
 firmware_import_workflow(
     name = 'btusb-r8822cu',
@@ -622,6 +636,7 @@ firmware_import_workflow(
     fw_files = [
         'i915/xe2lpd_dmc.bin',
         'i915/xe3lpd_dmc.bin',
+        'i915/xe3lpd_3002_dmc.bin',
     ],
     recovery = 'true',
 )
