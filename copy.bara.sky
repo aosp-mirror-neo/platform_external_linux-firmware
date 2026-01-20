@@ -641,6 +641,18 @@ firmware_import_workflow(
     recovery = 'true',
 )
 
+# Intel IPU6 FW for ADL-N
+firmware_import_workflow(
+    name = "ipu6_adln",
+    license_kind = "BSD-Binary-Only",
+    license_files = [
+        "LICENSE.ivsc",
+    ],
+    fw_files = [
+        "intel/ipu/ipu6epadln_fw.bin",
+    ],
+)
+
 # Intel BE200 Wireless MAC (API version 0x101)
 firmware_import_workflow(
     name = 'iwlwifi-gl-c0-fm-c0-101',
