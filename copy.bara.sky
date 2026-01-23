@@ -694,14 +694,14 @@ firmware_import_workflow(
 
 # Intel BE211 Wireless MAC
 firmware_import_workflow(
-    name = 'iwlwifi-sc-a0-wh-b0-c101',
+    name = 'iwlwifi-sc-a0-wh-b0-c102',
     license_kind = 'BSD-Binary-Only',
     license_files = [
         'LICENCE.iwlwifi_firmware',
     ],
     fw_files = [
-        'intel/iwlwifi/iwlwifi-sc-a0-wh-b0-c101.ucode',
-        'iwlwifi-sc-a0-wh-b0-c101.ucode',
+        'intel/iwlwifi/iwlwifi-sc-a0-wh-b0-c102.ucode',
+        'iwlwifi-sc-a0-wh-b0-c102.ucode',
     ],
 )
 
